@@ -7,9 +7,15 @@ class Actor(models.Model):
     first_name = models.CharField(max_length=64)
     last_name = models.CharField(max_length=64)
 
+    def __str__(self) -> str:
+        return f"{self.first_name} {self.last_name}"
+
 
 class Genre(models.Model):
     name = models.CharField(max_length=64)
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class Play(models.Model):
@@ -18,11 +24,17 @@ class Play(models.Model):
     actors = models.ManyToManyField(Actor, related_name="plays")
     genres = models.ManyToManyField(Genre, related_name="plays")
 
+    def __str__(self) -> str:
+        return self.title
+
 
 class TheatreHall(models.Model):
     name = models.CharField(max_length=64)
     rows = models.IntegerField()
     seats_in_row = models.IntegerField()
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class Performance(models.Model):
@@ -38,6 +50,9 @@ class Performance(models.Model):
     )
     show_time = models.DateTimeField()
 
+    def __str__(self) -> str:
+        return f"{self.play} at {self.theatre_hall} on {self.show_time.strftime('%Y-%m-%d %H:%M')}"
+
 
 class Reservation(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -46,6 +61,9 @@ class Reservation(models.Model):
         on_delete=models.CASCADE,
         related_name="reservations"
     )
+
+    def __str__(self) -> str:
+        return f"Reservation by {self.user} on {self.created_at.strftime('%Y-%m-%d %H:%M')}"
 
 
 class Ticket(models.Model):
@@ -62,3 +80,6 @@ class Ticket(models.Model):
         on_delete=models.CASCADE,
         related_name="tickets"
     )
+
+    def __str__(self) -> str:
+        return f"Ticket for {self.performance} - Row {self.row}, Seat {self.seat}"
