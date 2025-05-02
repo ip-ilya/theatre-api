@@ -83,3 +83,6 @@ class Ticket(models.Model):
 
     def __str__(self) -> str:
         return f"Ticket for {self.performance} - Row {self.row}, Seat {self.seat}"
+
+    class Meta:
+        unique_together = ("row", "seat", "performance")
