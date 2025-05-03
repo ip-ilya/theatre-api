@@ -84,5 +84,46 @@ class Ticket(models.Model):
     def __str__(self) -> str:
         return f"Ticket for {self.performance} - Row {self.row}, Seat {self.seat}"
 
+    @staticmethod
+    def validate_place_value(
+            place: str,
+            current_value: int,
+            max_value: int,
+            error_to_raise
+    ):
+        if not (1 <= current_value <= max_value):
+            raise error_to_raise(
+                {
+                    f"{place}": f"{place} must be in range [1, {max_value}], "
+                                f"not {current_value}"
+                }
+            )
+
+    def clean(self):
+        Ticket.validate_place_value(
+            "row",
+            self.row,
+            self.performance.theatre_hall.rows,
+            ValueError
+        )
+        Ticket.validate_place_value(
+            "seat",
+            self.seat,
+            self.performance.theatre_hall.seats_in_row,
+            ValueError
+        )
+
+    def save(
+            self,
+            force_insert=...,
+            force_update=...,
+            using=...,
+            update_fields=...,
+    ):
+        self.full_clean()
+        return super().save(
+            force_insert, force_update, using, update_fields
+        )
+
     class Meta:
         unique_together = ("row", "seat", "performance")
