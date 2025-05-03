@@ -82,7 +82,7 @@ class Ticket(models.Model):
     )
 
     def __str__(self) -> str:
-        return f"Ticket for {self.performance} - Row {self.row}, Seat {self.seat}"
+        return f"Row {self.row}, Seat {self.seat}"
 
     @staticmethod
     def validate_place_value(
@@ -113,17 +113,10 @@ class Ticket(models.Model):
             ValueError
         )
 
-    def save(
-            self,
-            force_insert=...,
-            force_update=...,
-            using=...,
-            update_fields=...,
-    ):
+    def save(self, *args, **kwargs):
         self.full_clean()
-        return super().save(
-            force_insert, force_update, using, update_fields
-        )
+        return super().save(*args, **kwargs)
 
     class Meta:
         unique_together = ("row", "seat", "performance")
+        ordering = ("row",)
