@@ -9,7 +9,8 @@ from theatre.models import (
 from theatre.serializers import (
     ActorSerializer,
     GenreSerializer, PlaySerializer, PlayListSerializer, TheatreHallSerializer, PerformanceSerializer,
-    PerformanceListSerializer, PlayRetrieveSerializer, TicketSerializer, ReservationSerializer
+    PerformanceListSerializer, PlayRetrieveSerializer, TicketSerializer, ReservationSerializer,
+    PerformanceRetrieveSerializer
 )
 
 
@@ -32,6 +33,10 @@ class PlayViewSet(ModelViewSet):
     queryset = Play.objects.all()
     serializer_class = PlaySerializer
 
+    @staticmethod
+    def _query_params_to_ints(query_string):
+        return [int(element) for element in query_string.split(",")]
+
     def get_serializer_class(self):
         if self.action == "list":
             return PlayListSerializer
@@ -42,12 +47,25 @@ class PlayViewSet(ModelViewSet):
 
     def get_queryset(self):
         queryset = self.queryset
+
+        genres = self.request.query_params.get("genres")
+        actors = self.request.query_params.get("actors")
+
+        if genres:
+            queryset = queryset.filter(
+                genres__id__in=self._query_params_to_ints(genres)
+            )
+        if actors:
+            queryset = queryset.filter(
+                actors__id__in=self._query_params_to_ints(actors)
+            )
+
         if self.action in ("list", "retrieve"):
             queryset = queryset.prefetch_related(
                 "actors", "genres"
             )
 
-        return queryset
+        return queryset.distinct()
 
 
 class PerformanceViewSet(ModelViewSet):
@@ -57,20 +75,25 @@ class PerformanceViewSet(ModelViewSet):
     def get_serializer_class(self):
         if self.action == "list":
             return PerformanceListSerializer
+        elif self.action == "retrieve":
+            return PerformanceRetrieveSerializer
+
         return PerformanceSerializer
 
     def get_queryset(self):
         queryset = self.queryset
+
+        date = self.request.query_params.get("date")
+
+        if date:
+            queryset = queryset.filter(show_time__date=date)
+
         if self.action in ("list", "retrieve"):
             queryset = queryset.select_related(
                 "play", "theatre_hall"
             )
-        return queryset
 
-
-class TicketViewSet(ModelViewSet):
-    queryset = Ticket.objects.all()
-    serializer_class = TicketSerializer
+        return queryset.distinct()
 
 
 class ReservationViewSet(ModelViewSet):
