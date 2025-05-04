@@ -1,4 +1,5 @@
-from django.core.serializers import serialize
+from django.db.models.fields import IntegerField
+from django.db.models import Count, F, ExpressionWrapper
 from rest_framework.viewsets import ModelViewSet
 
 from theatre.models import (
@@ -88,7 +89,18 @@ class PerformanceViewSet(ModelViewSet):
         if date:
             queryset = queryset.filter(show_time__date=date)
 
-        if self.action in ("list", "retrieve"):
+        if self.action == "list":
+            queryset = queryset.select_related(
+                "play", "theatre_hall"
+            ).annotate(
+                tickets_available=ExpressionWrapper(
+                    F("theatre_hall__rows") * F("theatre_hall__seats_in_row")
+                    - Count("tickets"),
+                    output_field=IntegerField()
+                )
+            )
+
+        elif self.action == "retrieve":
             queryset = queryset.select_related(
                 "play", "theatre_hall"
             )
