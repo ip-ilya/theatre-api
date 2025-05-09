@@ -1,5 +1,6 @@
 from django.db.models.fields import IntegerField
 from django.db.models import Count, F, ExpressionWrapper
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
 from theatre.models import (
@@ -111,6 +112,10 @@ class PerformanceViewSet(ModelViewSet):
 class ReservationViewSet(ModelViewSet):
     queryset = Reservation.objects.all()
     serializer_class = ReservationSerializer
+    permission_classes = [IsAuthenticated,]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -119,10 +124,13 @@ class ReservationViewSet(ModelViewSet):
 
     def get_queryset(self):
         queryset = self.queryset
+
+        queryset = queryset.filter(user=self.request.user)
+
         if self.action == "list":
             queryset = queryset.prefetch_related(
                 "tickets__performance__play",
                 "tickets__performance__theatre_hall"
             )
 
-            return queryset
+        return queryset
