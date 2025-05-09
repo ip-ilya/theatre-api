@@ -1,4 +1,8 @@
+import os
+import uuid
+
 from django.db import models
+from django.utils.text import slugify
 
 from theatre_api import settings
 
@@ -18,11 +22,21 @@ class Genre(models.Model):
         return self.name
 
 
+def create_custom_path(instance, filename):
+    _, extension = os.path.splitext(filename)
+
+    return os.path.join(
+        "uploads/images/",
+        f"{slugify(instance.title)}-{uuid.uuid4()}{extension}"
+    )
+
+
 class Play(models.Model):
     title = models.CharField(max_length=256)
     description = models.TextField()
     actors = models.ManyToManyField(Actor, related_name="plays")
     genres = models.ManyToManyField(Genre, related_name="plays")
+    image = models.ImageField(null=True, upload_to=create_custom_path)
 
     def __str__(self) -> str:
         return self.title
