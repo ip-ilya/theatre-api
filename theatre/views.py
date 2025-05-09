@@ -1,18 +1,23 @@
+from rest_framework.decorators import action
 from django.db.models.fields import IntegerField
 from django.db.models import Count, F, ExpressionWrapper
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from theatre.models import (
     Actor,
     Genre,
-    Play, TheatreHall, Performance, Ticket, Reservation
+    Play,
+    TheatreHall,
+    Performance,
+    Reservation
 )
 from theatre.serializers import (
     ActorSerializer,
     GenreSerializer, PlaySerializer, PlayListSerializer, TheatreHallSerializer, PerformanceSerializer,
     PerformanceListSerializer, PlayRetrieveSerializer, TicketSerializer, ReservationSerializer,
-    PerformanceRetrieveSerializer, ReservationListSerializer
+    PerformanceRetrieveSerializer, ReservationListSerializer, PlayImageSerializer
 )
 
 
@@ -44,6 +49,8 @@ class PlayViewSet(ModelViewSet):
             return PlayListSerializer
         elif self.action == "retrieve":
             return PlayRetrieveSerializer
+        elif self.action == "upload_image":
+            return PlayImageSerializer
 
         return PlaySerializer
 
@@ -68,6 +75,20 @@ class PlayViewSet(ModelViewSet):
             )
 
         return queryset.distinct()
+
+    @action(
+        methods=["POST"],
+        detail=True,
+        url_path="upload-image",
+
+    )
+    def upload_image(self, request, pk=None):
+        play = self.get_object()
+        serializer = self.get_serializer(play, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(serializer.data)
 
 
 class PerformanceViewSet(ModelViewSet):
@@ -112,7 +133,7 @@ class PerformanceViewSet(ModelViewSet):
 class ReservationViewSet(ModelViewSet):
     queryset = Reservation.objects.all()
     serializer_class = ReservationSerializer
-    permission_classes = [IsAuthenticated,]
+    permission_classes = [IsAuthenticated, ]
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
